@@ -1,0 +1,6 @@
+telethon
+pyarrow
+azure-storage-blob
+azure-identity
+pandas
+python-dotenv
