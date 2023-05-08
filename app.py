@@ -11,6 +11,8 @@ import datetime
 from telethon import utils
 from io import BytesIO
 from dotenv import load_dotenv
+import uuid
+
 load_dotenv()  
 blob_service_client = BlobServiceClient.from_connection_string(os.environ.get('CONNECTION_STRING'))
 container_client = blob_service_client.get_container_client(os.environ.get('CONTAINER_NAME'))
@@ -24,7 +26,7 @@ def saveMessageTorParquet(message, file_name):
         df = pd.DataFrame(current_messages)
         table = pa.Table.from_pandas(df)
         current_messages.clear()
-        with container_client.get_blob_client(os.getcwd()+ file_name) as blob_client:
+        with container_client.get_blob_client(file_name) as blob_client:
             with BytesIO() as f:
                 pq.write_table(table, f)
                 f.seek(0)
@@ -33,7 +35,7 @@ def saveMessageTorParquet(message, file_name):
 
 def on_message(message):
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    file_name = f"{timestamp+'_'+os.environ.get('CONTAINER_NAME')}.parquet"
+    file_name = f"{timestamp+'_'+os.environ.get('CONTAINER_NAME')+'_'+str(uuid.uuid4())}.parquet"
     saveMessageTorParquet(message, file_name)
     
 
@@ -46,7 +48,7 @@ async def main():
     async def receipt_message(event):
         message_date = event.date.strftime("%Y-%m-%d %H:%M:%S") # formatea la fecha
         message_content = event.message.message # obtiene el contenido del mensaje
-        print(f"[{message_date}] {message_content}")
+        #print(f"[{message_date}] {message_content}")
         on_message({'timestamp':message_date,'data':message_content})
 
     await client.start()
